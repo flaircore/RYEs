@@ -5,9 +5,9 @@
   "manifest_version": 2,
   "icons": {
     "16": "./icon_one.png",
-    "32": "./icon_one.png",
-    "48": "./icon_two.jpg",
-    "128": "./icon_two.jpg"
+    "32": "./icon_one_big.png",
+    "48": "./icon_two.png",
+    "128": "./icon_two_big.png"
   },
   "background": {
     "scripts": ["./background.js"]

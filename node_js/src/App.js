@@ -17,9 +17,9 @@ const LangSelect = ({langs, handleLangSelect}) => {
         return (
             <div className="select-container">
                 <label htmlFor="select_language">Select Language:</label>
-                <select name="select_language" defaultValue={langs.default.name} onChange={ (e) => handleLangSelect(e.target.value)}>
+                <select name="select_language" defaultValue={langs.default} onChange={ (e) => handleLangSelect(e.target.value)}>
                     {langs.options.map((option) => (
-                        <option key={option.name} value={option}>{option.name}</option>
+                        <option key={option.name} value={option.name}>{option.name}</option>
                     ))}
                 </select>
             </div>
@@ -27,7 +27,7 @@ const LangSelect = ({langs, handleLangSelect}) => {
     }
 
 }
-const Controls = ({updateVolume, updatePitch, handlePause, handleListen, langs, handleLangSelect }) => {
+const Controls = ({handlePause, handleListen, langs, handleLangSelect, handleUpdateControls }) => {
 
     return (
         <React.Fragment>
@@ -36,16 +36,31 @@ const Controls = ({updateVolume, updatePitch, handlePause, handleListen, langs, 
                 handleLangSelect={handleLangSelect}
 
             />
-            <label htmlFor="volume">Volume:</label>
-            <input name="volume" onChange={ (e) => updateVolume(e.target.value)} defaultValue="1" type="range" min="0"
-                   max="2" step="0.2"/>
-            <label htmlFor="pitch">Pitch:</label>
-            <input name="pitch" onChange={ (e) => updatePitch(e.target.value)} defaultValue="1" type="range" min="0"
-                   max="2" step="0.2"/>
+            <div className="controls">
+                <span>
+                    <label htmlFor="volume">Volume:</label>
+                    <input name="volume" onChange={ (e) => handleUpdateControls(e.target)} defaultValue="1" type="range" min="0"
+                       max="2" step="0.2" />
+                </span>
+                <span>
+                    <label htmlFor="pitch">Pitch:</label>
+                    <input name="pitch" onChange={ (e) => handleUpdateControls(e.target)} defaultValue="1" type="range" min="0"
+                       max="2" step="0.2"/>
+                </span>
+                <span>
+                    <label htmlFor="rate">Rate:</label>
+                    <input name="rate" onChange={ (e) => handleUpdateControls(e.target)} defaultValue="1" type="range" min="0"
+                       max="2" step="0.2"/>
+                </span>
+
+            </div>
             <hr/>
 
-            <button onClick={handleListen}>Listen</button>
-            <button onClick={handlePause}>Pause</button>
+            <div id="audio-mode">
+                <button onClick={handleListen}>Listen <span className="fa fa-play"></span></button>
+                <button onClick={handlePause}>Stop <span className="fa fa-stop"></span></button>
+            </div>
+
 
         </React.Fragment>
     )
@@ -59,29 +74,47 @@ const App = () => {
 
 
     const [listening, setListening] = useState('')
-    const [volume, setVolume] = useState(1)
-    const [pitch, setPitch] = useState(1)
+    const [controls, setControls] = useState({volume: 1, pitch: 1, rate: 1})
     const [lang, setLang] = useState({ default: "en-US", options: [] })
 
+
+    const handleUpdateControls = (target) => {
+        const { name, value } = target
+
+        let updated_controls = {...controls}
+        updated_controls[name] = parseFloat(value)
+
+        setControls(updated_controls)
+
+        toggleSpeech()
+
+    }
+
     function toggleSpeech(restart = true) {
-        const speech = new SpeechSynthesisUtterance()
+        const {volume, pitch, rate} = controls
+        const { default: df ,speechObj, options } = lang
 
-        // Voice better
-        //speech.voice = lang.options.find(voice => voice.name === lang.default.name)
-        speech.text = listening
+        const voice = options.find(voice => voice.name === df)
+        let speech = new SpeechSynthesisUtterance(listening)
+
+        try {
+            speech.voice = voice
+        } catch (e) {
+
+            console.log(`Error setting voice:::`,e)
+        }
+
         speech.volume = volume
-        speech.rate = 1
+        speech.rate = rate
         speech.pitch = pitch
-
-
-        window.speechSynthesis.cancel()
-        if (restart) window.speechSynthesis.speak(speech)
+        speechObj.cancel()
+        if (restart) speechObj.speak(speech)
     }
 
     const handleListenText = (val) =>  setListening(val)
 
     const handlePause = () => {
-
+        toggleSpeech(false)
     }
 
     const handleListen = () =>   {
@@ -89,15 +122,10 @@ const App = () => {
     }
 
 
-    const updateVolume = (e) => setVolume(e)
-
-    const updatePitch = (e) => setPitch(e)
-
-
     const handleLangSelect = (e) => {
-
-        // TODO:: set voice from here
-        setLang({ default: { name: e.name, lang: e.lang }, options: lang.options })
+        let new_langs = {...lang}
+        new_langs.default = e
+        setLang(new_langs)
     }
 
 
@@ -105,42 +133,33 @@ const App = () => {
 
 
     useEffect(() => {
-        window.speechSynthesis.addEventListener('voiceschanged', availableLang)
+        const speechObj = window.speechSynthesis
+        speechObj.addEventListener('voiceschanged', availableLang)
         function availableLang() {
             const langs = this.getVoices()
             const langOptions = langs.map( lng => { return {name: lng.name, lang: lng.lang}})
-            //console.log(lang)
-            setLang({ default: { name: langOptions[0].name, lang: langOptions[0].lang }, options: langOptions })
-            //console.log(langOptions)
+
+            setLang({ default: langOptions[0].name, options: langOptions, speechObj})
 
         }
 
     })
 
-
-    if (listening){
-
-        //window.speechSynthesis.speak(speech)
-    }
-
     return (
-        <div>
-            THE APPLICATIONS
-                <div>
-
-                </div>
-                <Controls
-                    updateVolume={updateVolume}
-                    updatePitch={updatePitch}
-                    handlePause={handlePause}
-                    handleListen={handleListen}
-                    langs={lang}
-                    handleLangSelect={handleLangSelect}
-                />
-                <hr/>
-                <TextInput
-                    handleListenText={handleListenText}
-                />
+        <div id="app">
+            <span> Read more with less energy....</span>
+            <hr/>
+            <Controls
+                handlePause={handlePause}
+                handleListen={handleListen}
+                langs={lang}
+                handleLangSelect={handleLangSelect}
+                handleUpdateControls={handleUpdateControls}
+            />
+            <hr/>
+            <TextInput
+                handleListenText={handleListenText}
+            />
         </div>
     );
 };
