@@ -8,3 +8,8 @@ App Dashboard
 
 
 ![App Dashboard footer](/ryes_app_footer.PNG)
+
+
+-------------
+See readme.md in /node_js folder
+-------------

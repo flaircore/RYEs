@@ -17,7 +17,5 @@
     "default_popup": "/build/index.html",
     "default_icon": "icon_one.png"
   },
-  "permissions": [
-    "activeTab"
-  ]
+  "permissions": []
 }
